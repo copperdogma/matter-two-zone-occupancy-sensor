@@ -1,0 +1,41 @@
+# ESP-IDF build artifacts
+firmware/build/
+firmware/sdkconfig
+firmware/sdkconfig.old
+firmware/dependencies.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Credentials and certificates
+credentials/
+*.pem
+*.key
+*.bin
+*.crt
+
+# Dependencies (managed by ESP-IDF)
+firmware/managed_components/
+
+# Logs
+*.log
+
+# Cursor
+.cursor/
+
