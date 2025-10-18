@@ -10,28 +10,29 @@
 // This is implemented keeping the Matter requirements in mind.
 #pragma once
 
-#include <driver/gpio.h>
 #include <esp_err.h>
 
 using pir_sensor_cb_t = void (*)(uint16_t endpoint_id, bool occupied, void *user_data);
 
 typedef struct {
-    pir_sensor_cb_t cb = nullptr;
-    uint16_t endpoint_id = 0;
-    gpio_num_t gpio_num = GPIO_NUM_NC;
-    void *user_data = nullptr;
+    // This callback functon will be called periodically to report the temperature.
+    pir_sensor_cb_t cb = NULL;
+    // endpoint_id associated with temperature sensor
+    uint16_t endpoint_id;
+    // user data
+    void *user_data = NULL;
 } pir_sensor_config_t;
 
 /**
  * @brief Initialize sensor driver. This function should be called only once
  *
- * @param config sensor configuration. The driver copies the configuration internally,
- *               so the caller can release or reuse the structure after this call.
+ * @param config sensor configurations. This should last for the lifetime of the driver
+ *               as driver layer do not make a copy of this object.
  *
  * @return esp_err_t - ESP_OK on success,
  *                     ESP_ERR_INVALID_ARG if config is NULL
- *                     ESP_ERR_INVALID_STATE if the GPIO is already registered
- *                     ESP_ERR_NO_MEM if no slots are available
+ *                     ESP_ERR_INVALID_STATE if driver is already initialized
  *                     appropriate error code otherwise
  */
-esp_err_t pir_sensor_init(const pir_sensor_config_t *config);
+esp_err_t pir_sensor_init(pir_sensor_config_t *config);
+

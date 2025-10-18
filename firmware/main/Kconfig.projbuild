@@ -2,80 +2,26 @@ menu "Example Configuration"
 
     config SHTC3_I2C_SDA_PIN
         int "I2C SDA Pin"
-        default 4 if IDF_TARGET_ESP32S3
-        default 8 if IDF_TARGET_ESP32C3
+        default 4
         help
             GPIO number for I2C master data
-            For ESP32-C3, GPIO 8 is the default SDA pin.
 
     config SHTC3_I2C_SCL_PIN
         int "I2C SCL Pin"
-        default 5 if IDF_TARGET_ESP32S3
-        default 9 if IDF_TARGET_ESP32C3
+        default 5
         help
             GPIO number for I2C master clock
-            For ESP32-C3, GPIO 9 is the default SCL pin.
 
-    config PIR_DATA_PIN
-        int "PIR Data Pin"
-        default 7 if IDF_TARGET_ESP32S3
-        default 3 if IDF_TARGET_ESP32C3
+    config PIR_FAR_ZONE_GPIO
+        int "Far Zone PIR GPIO"
+        default 3
         help
-            Default PIR Data Pin
+            GPIO number connected to the far-zone PIR sensor output.
 
-endmenu
+    config PIR_NEAR_ZONE_GPIO
+        int "Near Zone PIR GPIO"
+        default 4
+        help
+            GPIO number connected to the near-zone PIR sensor output.
 
-menu "Occupancy Sensor Configuration"
-    config PIR_SENSOR_GPIO_NUM
-        int "PIR Sensor GPIO Pin Number"
-        default 4 if IDF_TARGET_ESP32S3
-        default 4 if IDF_TARGET_ESP32C3
-        range 0 39
-        help
-            GPIO pin number where the PIR sensor output is connected.
-            Default is GPIO 4 for ESP32-S3 and GPIO 3 for ESP32-C3.
-            For ESP32-C3, avoid using strapping pins (GPIO 2, 8, 9) 
-            and JTAG pins (GPIO 4-7).
-            NOTE: Legacy config, replaced by PIR_SENSOR_FAR_GPIO_NUM and PIR_SENSOR_NEAR_GPIO_NUM
-
-    config PIR_SENSOR_FAR_GPIO_NUM
-        int "PIR Sensor Far Zone GPIO Pin Number"
-        default 3 if IDF_TARGET_ESP32C3
-        default 3 if IDF_TARGET_ESP32S3
-        range 0 39
-        help
-            GPIO pin number where the far-zone PIR sensor output is connected.
-            This sensor detects motion in the outer/distant detection zone.
-            Default is GPIO 3 for ESP32-C3.
-            
-    config PIR_SENSOR_NEAR_GPIO_NUM
-        int "PIR Sensor Near Zone GPIO Pin Number"
-        default 4 if IDF_TARGET_ESP32C3
-        default 4 if IDF_TARGET_ESP32S3
-        range 0 39
-        help
-            GPIO pin number where the near-zone PIR sensor output is connected.
-            This sensor detects motion in the inner/close detection zone.
-            Default is GPIO 4 for ESP32-C3.
-            
-    config LED_INDICATOR_GPIO_NUM
-        int "LED Indicator GPIO Pin Number"
-        default 6 if IDF_TARGET_ESP32S3
-        default 5 if IDF_TARGET_ESP32C3
-        range 0 48
-        help
-            GPIO pin number for the LED status indicator.
-            Dim when "on", bright blinking when "motion detected".
-            Default is GPIO 5 for ESP32-C3 (external LED with 220Ω resistor).
-            Use GPIO 8 for onboard LED (no resistor needed).
-            
-    config PIR_OCCUPIED_TO_UNOCCUPIED_DELAY_SECONDS
-        int "PIR Occupied to Unoccupied Delay (seconds)"
-        default 10
-        range 5 1800
-        help
-            Time in seconds before the occupancy sensor reports unoccupied after 
-            the last motion detection. Industry standard ranges from 30 seconds 
-            to 30 minutes (1800 seconds). Default value is 10 seconds for testing.
-            For production, 5-15 minutes (300-900 seconds) is typical.
 endmenu

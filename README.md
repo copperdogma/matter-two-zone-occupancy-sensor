@@ -18,9 +18,9 @@ source ~/esp/esp-matter/export.sh
 idf.py build
 idf.py -p /dev/tty.usbmodemXXX flash monitor
 
-# Current commissioning codes
-QR Code: MT:Y.K90GSY00KA0648G00
-Manual Code: 34970112332
+# Current commissioning codes (latest factory image)
+QR Code: MT:SQU15DS.15-OUR6WG10
+Manual Code: 11103141696
 ```
 
 ## Features
@@ -28,7 +28,6 @@ Manual Code: 34970112332
 - **Dual Zones:** Two independent occupancy sensors (far and near zones)
 - **Detection:** HC-SR501 PIR sensors with adjustable range and sensitivity
 - **Matter 1.4 Protocol:** Universal smart home integration (Apple Home, Google Home, Amazon Alexa)
-- **Visual Feedback:** LED indicators with zone-specific patterns (2 blinks = far, 4 blinks = near)
 - **Secure Commissioning:** QR code and manual pairing code setup
 - **Power:** USB-C powered for continuous operation
 - **Single-Cable Design:** Both PIRs powered from ESP32, no external PSU needed
@@ -39,8 +38,8 @@ Manual Code: 34970112332
 |-----------|----------|---------|
 | **ESP32-C3 SuperMini** | 1 | Single-core 160 MHz, 400KB SRAM, 4MB Flash, Wi-Fi, BLE 5.0 |
 | **HC-SR501 PIR** | 2 | Passive infrared motion sensors, adjustable sensitivity |
-| **Status LED** | 1 | Visual feedback with zone-specific blink patterns |
-| **220Ω Resistor** | 1 | For LED current limiting |
+| **(Optional) Status LED** | 1 | Can be added for visual feedback if desired |
+| **(Optional) 220Ω Resistor** | 1 | Use with LED if installed |
 
 ### Power Architecture
 
@@ -69,15 +68,15 @@ Both PIR sensors are powered directly from the ESP32-C3's 5V pin, which is safe 
 | GND          | PIR #2 GND    | Near zone sensor        |
 | 5V           | PIR #2 VCC    | Near zone sensor        |
 | GPIO 4       | PIR #2 Output | Near zone detection     |
-| GPIO 5       | LED Anode (+) | Through 220Ω resistor   |
-| GND          | LED Cathode (-)| Ground connection       |
+| GPIO 5       | (Optional) LED Anode (+) | Through 220Ω resistor   |
+| GND          | (Optional) LED Cathode (-)| Ground connection       |
 
 *For detailed wiring diagram, see [docs/circuit_diagram.md](docs/circuit_diagram.md)*
 
 ## Setup & Development
 
 1. **Environment Setup**
-   - Follow instructions in [SETUP.md](SETUP.md) to set up ESP-IDF, ESP-Matter SDK, and development certificates.
+   - Follow instructions in [SETUP-GUIDE.md](SETUP-GUIDE.md) to set up ESP-IDF, ESP-Matter SDK, and development certificates.
 
 2. **Build & Flash**
    ```bash
@@ -95,7 +94,8 @@ Both PIR sensors are powered directly from the ESP32-C3's 5V pin, which is safe 
    - After flashing, check serial monitor for QR code and pairing code
    - Use Apple Home or other Matter controller to add the device
    - You will see **two separate occupancy sensors** in your controller
-   - Current codes: QR `MT:Y.K90GSY00KA0648G00`, Manual `34970112332`
+   - Current sample codes: QR `MT:SQU15DS.15-OUR6WG10`, Manual `11103141696`  
+     *(The firmware prints fresh codes at boot whenever you regenerate factory data—always use the most recent values.)*
 
 ## Project Structure
 
@@ -111,7 +111,7 @@ matter-two-zone-occupancy-sensor/
 │   │   └── drivers/         # Hardware drivers
 │   └── CMakeLists.txt        # Build configuration
 ├── README.md                 # This file
-└── SETUP.md                  # Environment setup guide
+└── SETUP-GUIDE.md            # Environment setup guide
 ```
 
 ## Configuration
@@ -120,10 +120,6 @@ matter-two-zone-occupancy-sensor/
 - **Far Zone:** GPIO 3
 - **Near Zone:** GPIO 4
 - **Occupancy Timeout:** 10 seconds (configurable via Matter attribute `PIROccupiedToUnoccupiedDelay`)
-- **LED Indicator:** GPIO 5 (external LED with 220Ω resistor)
-  - 2 rapid blinks = far zone triggered
-  - 4 rapid blinks = near zone triggered
-  - Dim = idle, Bright = occupied
 
 ### Adjusting Configuration
 Modify GPIO pins and timeouts via menuconfig:
@@ -160,7 +156,7 @@ Both sensors share the same configurable timeout initially, but can be configure
 
 ## Documentation
 
-- [Setup Guide](SETUP.md) - Environment and hardware setup
+- [Setup Guide](SETUP-GUIDE.md) - Environment and hardware setup
 - [Circuit Diagram](docs/circuit_diagram.md) - Detailed wiring
 - [LED Indicator](docs/led_indicator.md) - LED behavior and patterns
 

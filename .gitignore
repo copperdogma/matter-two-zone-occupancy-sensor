@@ -29,6 +29,12 @@ credentials/
 *.key
 *.bin
 *.crt
+boot_capture*.txt
+firmware/boot_capture*.txt
+firmware/131b_*/
+firmware/*_key.pem
+firmware/*_cert.pem
+firmware/CD.der
 
 # Dependencies (managed by ESP-IDF)
 firmware/managed_components/
@@ -38,4 +44,3 @@ firmware/managed_components/
 
 # Cursor
 .cursor/
-

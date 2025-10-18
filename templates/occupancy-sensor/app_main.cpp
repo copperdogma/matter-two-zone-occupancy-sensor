@@ -8,7 +8,6 @@
 
 #include <app/server/CommissioningWindowManager.h>
 #include <app/server/Server.h>
-#include <driver/gpio.h>
 #include <setup_payload/OnboardingCodesUtil.h>
 #include <bsp/esp-bsp.h>
 #include <esp_err.h>
@@ -38,12 +37,6 @@ using namespace chip::app::Clusters;
 
 static void occupancy_sensor_notification(uint16_t endpoint_id, bool occupancy, void *user_data)
 {
-    const char *zone = static_cast<const char *>(user_data);
-    ESP_LOGI(TAG,
-             "Zone %s (endpoint %u) occupancy %s",
-             zone ? zone : "unknown",
-             endpoint_id,
-             occupancy ? "detected" : "cleared");
     // schedule the attribute update so that we can report it from matter thread
     chip::DeviceLayer::SystemLayer().ScheduleLambda([endpoint_id, occupancy]() {
         attribute_t * attribute = attribute::get(endpoint_id,
@@ -144,48 +137,26 @@ extern "C" void app_main()
 
     // Temperature and humidity endpoints are intentionally not created
 
-    struct zone_definition_t {
-        const char *label;
-        gpio_num_t gpio;
+    // add the occupancy sensor
+    occupancy_sensor::config_t occupancy_sensor_config;
+    occupancy_sensor_config.occupancy_sensing.occupancy_sensor_type =
+        chip::to_underlying(OccupancySensing::OccupancySensorTypeEnum::kPir);
+    occupancy_sensor_config.occupancy_sensing.occupancy_sensor_type_bitmap =
+        chip::to_underlying(OccupancySensing::OccupancySensorTypeBitmap::kPir);
+    // REQUIRED: Set feature flag for PIR sensor (cluster requires at least one feature)
+    occupancy_sensor_config.occupancy_sensing.feature_flags =
+        cluster::occupancy_sensing::feature::passive_infrared::get_id();
+
+    endpoint_t * occupancy_sensor_ep = occupancy_sensor::create(node, &occupancy_sensor_config, ENDPOINT_FLAG_NONE, NULL);
+    ABORT_APP_ON_FAILURE(occupancy_sensor_ep != nullptr, ESP_LOGE(TAG, "Failed to create occupancy_sensor endpoint"));
+
+    // initialize occupancy sensor driver (pir)
+    static pir_sensor_config_t pir_config = {
+        .cb = occupancy_sensor_notification,
+        .endpoint_id = endpoint::get_id(occupancy_sensor_ep),
     };
-    static constexpr zone_definition_t zone_configs[] = {
-        {"Far Zone", static_cast<gpio_num_t>(CONFIG_PIR_FAR_ZONE_GPIO)},
-        {"Near Zone", static_cast<gpio_num_t>(CONFIG_PIR_NEAR_ZONE_GPIO)},
-    };
-
-    for (const auto &zone : zone_configs) {
-        occupancy_sensor::config_t occupancy_sensor_config;
-        occupancy_sensor_config.occupancy_sensing.occupancy_sensor_type =
-            chip::to_underlying(OccupancySensing::OccupancySensorTypeEnum::kPir);
-        occupancy_sensor_config.occupancy_sensing.occupancy_sensor_type_bitmap =
-            chip::to_underlying(OccupancySensing::OccupancySensorTypeBitmap::kPir);
-        occupancy_sensor_config.occupancy_sensing.feature_flags =
-            cluster::occupancy_sensing::feature::passive_infrared::get_id();
-
-        endpoint_t *occupancy_sensor_ep =
-            occupancy_sensor::create(node, &occupancy_sensor_config, ENDPOINT_FLAG_NONE, NULL);
-        ABORT_APP_ON_FAILURE(occupancy_sensor_ep != nullptr,
-                             ESP_LOGE(TAG, "Failed to create occupancy_sensor endpoint for %s", zone.label));
-
-        const uint16_t endpoint_id = endpoint::get_id(occupancy_sensor_ep);
-        ESP_LOGI(TAG,
-                 "Created occupancy endpoint %u for %s on GPIO %d",
-                 endpoint_id,
-                 zone.label,
-                 static_cast<int>(zone.gpio));
-
-        pir_sensor_config_t pir_config = {
-            .cb = occupancy_sensor_notification,
-            .endpoint_id = endpoint_id,
-            .gpio_num = zone.gpio,
-            .user_data = const_cast<char *>(zone.label),
-        };
-
-        err = pir_sensor_init(&pir_config);
-        ABORT_APP_ON_FAILURE(err == ESP_OK,
-                             ESP_LOGE(TAG, "Failed to initialize PIR driver for %s (GPIO %d)",
-                                      zone.label, static_cast<int>(zone.gpio)));
-    }
+    err = pir_sensor_init(&pir_config);
+    ABORT_APP_ON_FAILURE(err == ESP_OK, ESP_LOGE(TAG, "Failed to initialize occupancy sensor driver"));
 
 #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
     /* Set OpenThread platform config */
@@ -206,3 +177,4 @@ extern "C" void app_main()
         chip::RendezvousInformationFlags(chip::RendezvousInformationFlag::kBLE)
             .Set(chip::RendezvousInformationFlag::kOnNetwork));
 }
+
