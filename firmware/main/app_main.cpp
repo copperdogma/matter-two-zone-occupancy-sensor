@@ -8,6 +8,7 @@
 
 #include <app/server/CommissioningWindowManager.h>
 #include <app/server/Server.h>
+#include <cstring>
 #include <driver/gpio.h>
 #include <setup_payload/OnboardingCodesUtil.h>
 #include <bsp/esp-bsp.h>
@@ -23,6 +24,7 @@
 
 // drivers implemented by this example
 #include <drivers/pir.h>
+#include <drivers/pir_led_indicator.h>
 
 static const char *TAG = "app_main";
 
@@ -44,6 +46,20 @@ static void occupancy_sensor_notification(uint16_t endpoint_id, bool occupancy, 
              zone ? zone : "unknown",
              endpoint_id,
              occupancy ? "detected" : "cleared");
+    
+    // Update LED based on zone and occupancy state
+    if (occupancy) {
+        // Check which zone triggered
+        if (zone && strcmp(zone, "Far Zone") == 0) {
+            pir_led_indicator_blink_far();  // 2 blinks
+        } else if (zone && strcmp(zone, "Near Zone") == 0) {
+            pir_led_indicator_blink_near(); // 4 blinks
+        }
+    } else {
+        // No occupancy, return to dim
+        pir_led_indicator_set_dim();
+    }
+    
     // schedule the attribute update so that we can report it from matter thread
     chip::DeviceLayer::SystemLayer().ScheduleLambda([endpoint_id, occupancy]() {
         attribute_t * attribute = attribute::get(endpoint_id,
@@ -136,6 +152,10 @@ extern "C" void app_main()
     /* Initialize push button on the dev-kit to reset the device */
     esp_err_t err = factory_reset_button_register();
     ABORT_APP_ON_FAILURE(ESP_OK == err, ESP_LOGE(TAG, "Failed to initialize reset button, err:%d", err));
+
+    /* Initialize LED indicator on GPIO 5 */
+    err = pir_led_indicator_init(5);
+    ABORT_APP_ON_FAILURE(ESP_OK == err, ESP_LOGE(TAG, "Failed to initialize LED indicator, err:%d", err));
 
     /* Create a Matter node and add the mandatory Root Node device type on endpoint 0 */
     node::config_t node_config;
